@@ -4,6 +4,12 @@ from operator import methodcaller
 import subprocess
 import pipes
 
+try:
+    from subprocess import DEVNULL  # py3k, thanks SO
+except ImportError:
+    import os
+    DEVNULL = open(os.devnull, 'wb')
+
 PIPE = object()
 STDOUT_TO = object()
 STDIN_FROM = object()
@@ -52,6 +58,12 @@ class Process(object):
         else:
             return other(str(self))
 
+    def __gt__(self, f):
+        return Process(*(self.arguments + (STDOUT_TO, f)))
+
+    def __lt__(self, f):
+        return Process(*(self.arguments + (STDIN_FROM, f)))
+
     def __invert__(self):
         return subprocess.check_output(str(self), shell=True).splitlines()[0]
 
@@ -61,11 +73,14 @@ class Process(object):
     def __pos__(self):
         return subprocess.check_output(str(self), shell=True)
 
-    def __gt__(self, f):
-        return Process(*(self.arguments + (STDOUT_TO, f)))
+    def __bool__(self):
+        try:
+            subprocess.check_call(str(self), shell=True, stdout=DEVNULL)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
-    def __lt__(self, f):
-        return Process(*(self.arguments + (STDIN_FROM, f)))
+    __nonzero__ = __bool__
 
     def __iter__(self):
         return readlines(str(self))
