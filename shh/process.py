@@ -12,7 +12,9 @@ except ImportError:
 
 PIPE = object()
 STDOUT_TO = object()
+STDOUT_APPEND_TO = object()
 STDIN_FROM = object()
+STDIN_FROM_STRING = object()
 
 
 class Process(object):
@@ -25,8 +27,12 @@ class Process(object):
             return '|'
         elif arg is STDOUT_TO:
             return '>'
+        elif arg is STDOUT_APPEND_TO:
+            return '>>'
         elif arg is STDIN_FROM:
             return '<'
+        elif arg is STDIN_FROM_STRING:
+            return '<<<'
         else:
             return pipes.quote(arg)
 
@@ -46,6 +52,8 @@ class Process(object):
         return ' '.join(map(self.quote, self.arguments))
 
     def __call__(self, *arguments, **kwargs):
+        if not arguments and not kwargs:
+            return bool(self)
         keywords = (self.fmt_keyword(k, v) for k, v in kwargs.items())
         return Process(*(self.arguments + tuple(chain.from_iterable(keywords)) + arguments))
 
@@ -64,18 +72,24 @@ class Process(object):
     def __lt__(self, f):
         return Process(*(self.arguments + (STDIN_FROM, f)))
 
+    def __rshift__(self, f):
+        return Process(*(self.arguments + (STDOUT_APPEND_TO, f)))
+
+    def __lshift__(self, _input):
+        return Process(*(self.arguments + (STDIN_FROM_STRING, _input)))
+
     def __invert__(self):
-        return subprocess.check_output(str(self), shell=True).splitlines()[0]
+        return subprocess.check_output(str(self), shell=True).strip()
 
     def __neg__(self):
-        return subprocess.check_call(str(self), shell=True)
+        return subprocess.check_call(str(self), stdout=DEVNULL, shell=True)
 
     def __pos__(self):
-        return subprocess.check_output(str(self), shell=True)
+        return subprocess.check_call(str(self), shell=True)
 
     def __bool__(self):
         try:
-            subprocess.check_call(str(self), shell=True, stdout=DEVNULL)
+            subprocess.check_call(str(self), shell=True)
             return True
         except subprocess.CalledProcessError:
             return False
