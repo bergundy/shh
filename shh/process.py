@@ -1,5 +1,10 @@
 from subprocess import Popen
-from itertools import imap, chain
+try:
+    from itertools import imap as map
+except ImportError:
+    # python 3
+    pass
+from itertools import chain
 from operator import methodcaller
 import subprocess
 import pipes
@@ -79,7 +84,7 @@ class Process(object):
         return Process(*(self.arguments + (STDIN_FROM_STRING, _input)))
 
     def __invert__(self):
-        return subprocess.check_output(str(self), shell=True).strip()
+        return subprocess.check_output(str(self), shell=True).decode('utf-8').strip()
 
     def __neg__(self):
         return subprocess.check_call(str(self), stdout=DEVNULL, shell=True)
@@ -102,6 +107,6 @@ class Process(object):
 
 def readlines(command):
     p = Popen(command, shell=True, stdout=subprocess.PIPE)
-    for line in imap(methodcaller('strip'), iter(p.stdout.readline, '')):
-        yield line
+    for line in map(methodcaller('strip'), iter(p.stdout.readline, b'')):
+        yield line.decode('utf-8')
     p.wait()

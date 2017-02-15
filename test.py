@@ -2,7 +2,7 @@ from shh import Command, ls, grep, git
 
 
 def test():
-    command = git.rev_parse(abbrev_ref='HEAD')
+    command = git.rev_parse('HEAD', abbrev_ref=True)
     assert str(command) == 'git rev-parse --abbrev-ref HEAD'
     assert ~command == 'master'
     assert not grep('ahfsfwewgwg' * 2)(__file__)
@@ -14,3 +14,7 @@ def test():
 
     assert len(list(Command('/bin/cat') < '/tmp/hey.txt')) == 2
     assert ~(Command('/bin/cat') << 'heh') == 'heh'
+
+
+if __name__ == '__main__':
+    test()
