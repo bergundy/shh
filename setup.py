@@ -9,7 +9,7 @@ setup(
     author='Roey Berman',
     author_email='roey.berman@gmail.com',
     packages=['shh'],
-    verion='0.1',
+    version='0.1',
     keywords=['shell', 'sh'],
     install_requires=[
     ],
